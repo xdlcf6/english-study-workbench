@@ -1,1 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>同等学力申硕英语 · 学习工作台</title>
+<style>
+:root{
+  --primary:#6c5ce7; --primary-dark:#5a4bd1; --primary-light:#f1effd;
+  --accent:#00b894; --warn:#fdcb6e; --danger:#e17055;
+  --bg:#f5f5f9; --card:#fff; --text:#2d3436; --sub:#8a8f9a;
+  --border:#eee; --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--text); max-width:720px; margin:0 auto;
+  min-height:100vh; padding-bottom:76px; position:relative;
+}
+/* 顶部 */
+.app-header{
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(135deg,#6c5ce7 0%,#a29bfe 100%);
+  color:#fff; padding:16px 18px 14px;
+  box-shadow:0 4px 18px rgba(108,92,231,.35);
+}
+.app-header .title{font-size:19px;font-weight:700;letter-spacing:.5px;}
+.app-header .sub{font-size:12px;opacity:.85;margin-top:3px;}
+.app-header .head-stats{display:flex;gap:16px;margin-top:10px;font-size:12px;}
+.app-header .head-stats b{font-size:16px;margin-right:2px;}
+/* 页面容器 */
+.page{display:none;padding:14px 14px 24px;}
+.page.active{display:block;animation:fade .25s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+/* 底部导航 */
+.bottom-nav{
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:720px; background:var(--card);
+  border-top:1px solid var(--border); display:flex; z-index:60;
+  box-shadow:0 -2px 12px rgba(0,0,0,.04);
+}
+.bottom-nav .tab{
+  flex:1; text-align:center; padding:9px 0 7px; cursor:pointer;
+  color:var(--sub); font-size:11px; user-select:none;
+}
+.bottom-nav .tab .ic{font-size:21px;display:block;margin-bottom:1px;}
+.bottom-nav .tab.active{color:var(--primary);font-weight:600;}
+/* 卡片 */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 2px 10px rgba(0,0,0,.04);margin-bottom:12px;border:1px solid var(--border);}
+/* 概览 */
+.hero{
+  background:linear-gradient(135deg,#6c5ce7,#a29bfe); border-radius:var(--radius);
+  color:#fff; padding:20px; margin-bottom:14px;
+}
+.hero h2{font-size:17px;margin-bottom:8px;}
+.hero .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px;}
+.hero .cell{background:rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;}
+.hero .cell .n{font-size:22px;font-weight:800;}
+.hero .cell .t{font-size:11px;opacity:.9;margin-top:2px;}
+.section-title{font-size:15px;font-weight:700;margin:16px 2px 10px;display:flex;align-items:center;gap:6px;}
+.section-title .bar{width:4px;height:16px;background:var(--primary);border-radius:2px;display:inline-block;}
+/* 题型入口 */
+.part-item{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;}
+.part-item .p-ic{
+  width:42px;height:42px;border-radius:12px;background:var(--primary-light);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.part-item .p-info{flex:1;min-width:0;}
+.part-item .p-name{font-size:15px;font-weight:600;}
+.part-item .p-desc{font-size:11px;color:var(--sub);margin-top:2px;}
+.part-item .p-arrow{color:#ccc;font-size:18px;}
+/* 题目列表 */
+.q-item{padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start;}
+.q-item:last-child{border-bottom:none;}
+.q-item .q-no{
+  min-width:30px;height:30px;border-radius:9px;background:var(--primary-light);
+  color:var(--primary);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.q-item .q-stem{font-size:13.5px;line-height:1.6;flex:1;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.q-item .q-state{width:22px;flex-shrink:0;text-align:center;font-size:15px;padding-top:4px;}
+.q-item.done .q-no{background:var(--accent);color:#fff;}
+/* 答题视图 */
+.backbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.backbar .back{font-size:15px;color:var(--primary);cursor:pointer;font-weight:600;}
+.backbar .ttl{font-size:14px;font-weight:600;flex:1;}
+.backbar .pno{font-size:12px;color:var(--sub);}
+.passage-box{
+  background:#fafafe;border:1px solid var(--border);border-radius:12px;
+  padding:14px;font-size:13.5px;line-height:1.8;color:#4a4f58;margin-bottom:12px;
+}
+.passage-box .pb-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.passage-box .pb-head span{font-weight:700;color:var(--primary);font-size:13px;}
+.passage-box .pb-toggle{font-size:12px;color:var(--sub);cursor:pointer;}
+.passage-box.collapsed .pb-body{display:none;}
+.opt-list{list-style:none;}
+.opt-item{
+  display:flex;gap:10px;align-items:flex-start;padding:13px 14px;
+  border:1px solid var(--border);border-radius:12px;margin-bottom:10px;
+  cursor:pointer;font-size:13.5px;line-height:1.6;transition:all .15s;background:#fff;
+}
+.opt-item .letter{font-weight:800;color:var(--primary);flex-shrink:0;}
+.opt-item.selected{border-color:var(--primary);background:var(--primary-light);}
+.opt-item.correct{border-color:var(--accent);background:#e8faf4;}
+.opt-item.correct .letter{color:var(--accent);}
+.opt-item.wrong{border-color:var(--danger);background:#fdeeea;}
+.opt-item.wrong .letter{color:var(--danger);}
+.opt-item.disabled{pointer-events:none;}
+/* 解析 */
+.analysis-box{background:#fff8ef;border:1px solid #f3e2c3;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;margin-top:4px;display:none;}
+.analysis-box.show{display:block;animation:fade .2s;}
+.analysis-box .a-ans{color:var(--accent);font-weight:700;font-size:14px;margin-bottom:6px;}
+.analysis-box .a-item{margin-top:6px;}
+.analysis-box .a-item .k{font-weight:600;color:#b58900;}
+/* 错题本 */
+.wrong-item{padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;align-items:flex-start;}
+.wrong-item:last-child{border-bottom:none;}
+.wrong-item .wi-main{flex:1;min-width:0;}
+.wrong-item .wi-tag{font-size:11px;color:var(--danger);border:1px solid #f5c6bc;background:#fdeeea;border-radius:6px;padding:1px 7px;display:inline-block;margin-bottom:5px;}
+.wrong-item .wi-stem{font-size:13px;line-height:1.5;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+/* 统计 */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.stat-grid .sc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;}
+.stat-grid .sc .n{font-size:22px;font-weight:800;color:var(--primary);}
+.stat-grid .sc .t{font-size:11px;color:var(--sub);margin-top:4px;}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:12px;}
+.bar-row .bl{width:74px;color:var(--sub);flex-shrink:0;text-align:right;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.bar-row .btrack{flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden;}
+.bar-row .bfill{height:100%;background:linear-gradient(90deg,#6c5ce7,#a29bfe);border-radius:5px;transition:width .4s;}
+.bar-row .bn{width:36px;text-align:left;color:var(--sub);}
+/* 通用按钮 */
+.btn{border:none;border-radius:11px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn.primary{background:var(--primary);color:#fff;}
+.btn.primary:active{transform:scale(.96);}
+.btn.ghost{background:var(--primary-light);color:var(--primary);}
+.empty-tip{text-align:center;color:var(--sub);padding:40px 16px;font-size:13.5px;line-height:1.9;}
+.empty-tip .big{font-size:38px;display:block;margin-bottom:10px;}
+/* toast */
+#toast{
+  position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(30px);
+  background:rgba(45,52,54,.92);color:#fff;padding:11px 20px;border-radius:10px;
+  font-size:13px;opacity:0;transition:all .3s;z-index:99;pointer-events:none;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+/* 考试信息 */
+.info-block{margin-bottom:12px;}
+.info-block .ib-t{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--primary);}
+.info-block .ib-c{font-size:13px;line-height:1.9;color:#4a4f58;}
+table.mini{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.mini th,table.mini td{border:1px solid var(--border);padding:7px 8px;text-align:center;}
+table.mini th{background:var(--primary-light);color:var(--primary);font-weight:600;}
+</style>
+</head>
+<body>
 
+<header class="app-header">
+  <div class="title">📘 同等学力申硕英语</div>
+  <div class="sub">学习工作台 · 2026真题题库</div>
+  <div class="head-stats">
+    <span>答对 <b id="hOk">0</b></span>
+    <span>答错 <b id="hBad">0</b></span>
+    <span>错题 <b id="hWrong">0</b></span>
+    <span>正确率 <b id="hAcc">0%</b></span>
+  </div>
+</header>
+
+<!-- 概览页 -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h2>📖 今日学习</h2>
+    <div class="grid">
+      <div class="cell"><div class="n" id="hToday">0</div><div class="t">今日答题</div></div>
+      <div class="cell"><div class="n" id="hTodayOk">0</div><div class="t">今日答对</div></div>
+      <div class="cell"><div class="n" id="hTotalQ">74</div><div class="t">题库题目</div></div>
+      <div class="cell"><div class="n" id="hWrong2">0</div><div class="t">待巩固错题</div></div>
+    </div>
+  </div>
+  <div class="section-title"><span class="bar"></span>考试题型</div>
+  <div id="partList" class="card"></div>
+  <div class="section-title"><span class="bar"></span>快速入口</div>
+  <div class="card" style="padding:6px 0;">
+    <div class="part-item" onclick="go('wrong')"><span class="p-ic">📌</span><div class="p-info"><div class="p-name">错题重练</div><div class="p-desc">复习答错的题目，逐个击破</div></div><span class="p-arrow">›</span></div>
+    <div class="part-item" onclick="go('info')"><span class="p-ic">📋</span><div class="p-info"><div class="p-name">考试大纲速览</div><div class="p-desc">题型、题量、分值、词汇要求</div></div><span class="p-arrow">›</span></div>
+  </div>
+</div>
+
+<!-- 练习页：题型分组 -->
+<div class="page" id="page-parts">
+  <div class="section-title"><span class="bar"></span>选择题型开始练习</div>
+  <div id="partList2" class="card"></div>
+</div>
+
+<!-- 练习页：题目列表 -->
+<div class="page" id="page-quests">
+  <div class="backbar">
+    <span class="back" onclick="go('parts')">‹ 返回</span>
+    <span class="ttl" id="qListTitle"></span>
+    <span class="pno" id="qListPno"></span>
+  </div>
+  <div id="qList" class="card"></div>
+</div>
+
+<!-- 练习页：答题视图 -->
+<div class="page" id="page-answer">
+  <div class="backbar">
+    <span class="back" onclick="go('quests')">‹ 返回</span>
+    <span class="ttl" id="aPart"></span>
+    <span class="pno" id="aPno"></span>
+  </div>
+  <div id="answerWrap"></div>
+</div>
+
+<!-- 错题页 -->
+<div class="page" id="page-wrong">
+  <div class="backbar"><span class="ttl">📌 错题本</span><span class="pno" id="wrongCount"></span></div>
+  <div id="wrongList" class="card"></div>
+  <div style="text-align:center;margin-top:8px;"><button class="btn ghost" onclick="retryAllWrong()">重练全部错题</button></div>
+</div>
+
+<!-- 统计页 -->
+<div class="page" id="page-stats">
+  <div class="section-title"><span class="bar"></span>学习统计</div>
+  <div class="stat-grid" id="statGrid"></div>
+  <div class="section-title"><span class="bar"></span>各题型正确率</div>
+  <div class="card" style="padding:16px;" id="statBars"></div>
+  <div class="section-title"><span class="bar"></span>最近 7 天</div>
+  <div class="card" style="padding:16px;" id="weekChart"></div>
+  <div style="text-align:center;margin-top:10px;"><button class="btn ghost" onclick="clearAll()">清空学习记录</button></div>
+</div>
+
+<!-- 大纲页 -->
+<div class="page" id="page-info">
+  <div class="backbar"><span class="back" onclick="go('home')">‹ 返回</span><span class="ttl">📋 考试大纲速览</span></div>
+  <div class="card" style="padding:16px;">
+    <div class="info-block"><div class="ib-t">考试概述</div><div class="ib-c">《同等学力人员申请硕士学位英语水平全国统一考试大纲（第六版）》规定：卷面满分 100 分，考试时间共 150 分钟，重点考查口语交际、词汇、阅读理解、语篇完形处理、英译汉和写作能力（暂取消听力测试）。</div></div>
+    <div class="info-block"><div class="ib-t">词汇要求</div><div class="ib-c">掌握约 6000 个英语词汇和约 700 个常用词组。其中约 2800 个积极词汇要求熟练掌握（能在口语交际和写作中准确运用），其余词汇要求能在阅读、完形和英译汉中识别理解。</div></div>
+    <div class="info-block"><div class="ib-t">试卷结构</div><div class="ib-c">
+      <table class="mini">
+        <tr><th>题型</th><th>题量</th><th>分值</th><th>时间</th></tr>
+        <tr><td>Ⅰ 口语交际</td><td>10</td><td>10</td><td>15分</td></tr>
+        <tr><td>Ⅱ 词汇</td><td>10</td><td>10</td><td>10分</td></tr>
+        <tr><td>Ⅲ 阅读理解</td><td>25</td><td>25</td><td>45分</td></tr>
+        <tr><td>Ⅳ 完形填空</td><td>10</td><td>10</td><td>10分</td></tr>
+        <tr><td>Ⅴ 短文完成</td><td>20</td><td>20</td><td>20分</td></tr>
+        <tr><td>Ⅵ 英译汉</td><td>100词</td><td>10</td><td>20分</td></tr>
+        <tr><td>Ⅶ 写作</td><td>≥150词</td><td>15</td><td>30分</td></tr>
+        <tr><td><b>合计</b></td><td><b>100</b></td><td><b>100</b></td><td><b>150分</b></td></tr>
+      </table>
+    </div></div>
+    <div class="info-block"><div class="ib-t">本工作台题库</div><div class="ib-c">收录 2026 年（2025 真题）完整试卷：口语交际、词汇、阅读理解、完形填空、短文完成、英译汉、写作，共 74 题，含逐题答案、解析提示与参考译文，支持错题记录与统计。</div></div>
+  </div>
+</div>
+
+<!-- 底部导航 -->
+<nav class="bottom-nav">
+  <div class="tab active" data-page="home"><span class="ic">🏠</span>概览</div>
+  <div class="tab" data-page="parts"><span class="ic">📝</span>练习</div>
+  <div class="tab" data-page="wrong"><span class="ic">📌</span>错题</div>
+  <div class="tab" data-page="stats"><span class="ic">📊</span>统计</div>
+  <div class="tab" data-page="info"><span class="ic">📋</span>大纲</div>
+</nav>
+
+<div id="toast"></div>
+
+<script>
+const QUESTIONS=[
+{id:1,part:"第1部分",type:"口语交际",num:"1",passage:"Louise: Hey, Julia... Look at those desserts! How about baking some cookies today?\nJulia: __1__ While we're here, let's pick up the ingredients. But what do we need?\nLouise: The recipe calls for flour, sugar and butter. __2__\nJulia: Why don't you get the dairy ingredients? You'll find those in the refrigerated section in the back of the store. I'll get the dry ingredients - they're in aisle 10.\nLouise: Great! __3__\nJulia: OK. See you there.",stem:"请为空格 __1__ 选择最佳选项，使对话完整。",options:["A. Let's meet at the checkout.","B. Yeah, that's a great idea!","C. And we also need some eggs and chocolate chips."],answer:"B",analysis:"Louise 提议“How about baking some cookies today?”，Julia 应先表示赞同，故选 B“Yeah, that's a great idea!”。"},
+{id:2,part:"第1部分",type:"口语交际",num:"2",passage:"Louise: Hey, Julia... Look at those desserts! How about baking some cookies today?\nJulia: __1__ While we're here, let's pick up the ingredients. But what do we need?\nLouise: The recipe calls for flour, sugar and butter. __2__\nJulia: Why don't you get the dairy ingredients? You'll find those in the refrigerated section in the back of the store. I'll get the dry ingredients - they're in aisle 10.\nLouise: Great! __3__\nJulia: OK. See you there.",stem:"请为空格 __2__ 选择最佳选项，使对话完整。",options:["A. Let's meet at the checkout.","B. Yeah, that's a great idea!","C. And we also need some eggs and chocolate chips."],answer:"C",analysis:"Louise 说食谱需要面粉、糖和黄油，之后应继续补充所需材料，故选 C“And we also need some eggs and chocolate chips.”。"},
+{id:3,part:"第1部分",type:"口语交际",num:"3",passage:"Louise: Hey, Julia... Look at those desserts! How about baking some cookies today?\nJulia: __1__ While we're here, let's pick up the ingredients. But what do we need?\nLouise: The recipe calls for flour, sugar and butter. __2__\nJulia: Why don't you get the dairy ingredients? You'll find those in the refrigerated section in the back of the store. I'll get the dry ingredients - they're in aisle 10.\nLouise: Great! __3__\nJulia: OK. See you there.",stem:"请为空格 __3__ 选择最佳选项，使对话完整。",options:["A. Let's meet at the checkout.","B. Yeah, that's a great idea!","C. And we also need some eggs and chocolate chips."],answer:"A",analysis:"Louise 说“Great!”后提出建议，结合 Julia 的“See you there”可知应提议在结账处会合，故选 A“Let's meet at the checkout.”。"},
+{id:4,part:"第1部分",type:"口语交际",num:"7",passage:"Tamim: Hey Sahan, you are looking so happy. What's the matter?\nSahan: Yeah, Tamim, you are right. Actually, __7__\nTamim: So what's that?\nSahan: I want to become a doctor. I talked with my dad today about it and he has inspired me a lot.\nTamim: That's very good. Why do you want to become a doctor?\nSahan: __8__ Actually, I am from a village and I have seen people there not getting enough treatment and they are dying without medicine and proper treatment.\nTamim: __9__ I hope you will become a doctor and serve people.\nSahan: Yeah, thanks for your words. So, have you got any career choice?\nTamim: Yeah, I want to be a banker. I am studying commerce and accounting. __10__\nSahan: It's a popular profession right now. I think you have a pretty good observation.",stem:"请为空格 __7__ 选择最佳选项，使访谈完整。",options:["A. I think I am passionate about it.","B. Your idea is great.","C. I was talking with my father about my aim in life.","D. I want to serve the poor people."],answer:"C",analysis:"Sahan 说“You are right”后解释开心的原因，后文提到“I talked with my dad today about it”，故选 C“I was talking with my father about my aim in life.”。"},
+{id:5,part:"第1部分",type:"口语交际",num:"8",passage:"Tamim: Hey Sahan, you are looking so happy. What's the matter?\nSahan: Yeah, Tamim, you are right. Actually, __7__\nTamim: So what's that?\nSahan: I want to become a doctor. I talked with my dad today about it and he has inspired me a lot.\nTamim: That's very good. Why do you want to become a doctor?\nSahan: __8__ Actually, I am from a village and I have seen people there not getting enough treatment and they are dying without medicine and proper treatment.\nTamim: __9__ I hope you will become a doctor and serve people.\nSahan: Yeah, thanks for your words. So, have you got any career choice?\nTamim: Yeah, I want to be a banker. I am studying commerce and accounting. __10__\nSahan: It's a popular profession right now. I think you have a pretty good observation.",stem:"请为空格 __8__ 选择最佳选项，使访谈完整。",options:["A. I think I am passionate about it.","B. Your idea is great.","C. I was talking with my father about my aim in life.","D. I want to serve the poor people."],answer:"D",analysis:"Sahan 解释想当医生的原因，后文提到村里人得不到治疗，故选 D“I want to serve the poor people.”。"},
+{id:6,part:"第1部分",type:"口语交际",num:"9",passage:"Tamim: Hey Sahan, you are looking so happy. What's the matter?\nSahan: Yeah, Tamim, you are right. Actually, __7__\nTamim: So what's that?\nSahan: I want to become a doctor. I talked with my dad today about it and he has inspired me a lot.\nTamim: That's very good. Why do you want to become a doctor?\nSahan: __8__ Actually, I am from a village and I have seen people there not getting enough treatment and they are dying without medicine and proper treatment.\nTamim: __9__ I hope you will become a doctor and serve people.\nSahan: Yeah, thanks for your words. So, have you got any career choice?\nTamim: Yeah, I want to be a banker. I am studying commerce and accounting. __10__\nSahan: It's a popular profession right now. I think you have a pretty good observation.",stem:"请为空格 __9__ 选择最佳选项，使访谈完整。",options:["A. I think I am passionate about it.","B. Your idea is great.","C. I was talking with my father about my aim in life.","D. I want to serve the poor people."],answer:"B",analysis:"Tamim 听了 Sahan 的志向表示赞许，故选 B“Your idea is great.”，与后文“I hope you will become a doctor”衔接。"},
+{id:7,part:"第1部分",type:"口语交际",num:"10",passage:"Tamim: Hey Sahan, you are looking so happy. What's the matter?\nSahan: Yeah, Tamim, you are right. Actually, __7__\nTamim: So what's that?\nSahan: I want to become a doctor. I talked with my dad today about it and he has inspired me a lot.\nTamim: That's very good. Why do you want to become a doctor?\nSahan: __8__ Actually, I am from a village and I have seen people there not getting enough treatment and they are dying without medicine and proper treatment.\nTamim: __9__ I hope you will become a doctor and serve people.\nSahan: Yeah, thanks for your words. So, have you got any career choice?\nTamim: Yeah, I want to be a banker. I am studying commerce and accounting. __10__\nSahan: It's a popular profession right now. I think you have a pretty good observation.",stem:"请为空格 __10__ 选择最佳选项，使访谈完整。",options:["A. I think I am passionate about it.","B. Your idea is great.","C. I was talking with my father about my aim in life.","D. I want to serve the poor people."],answer:"A",analysis:"Tamim 说自己想当银行家、正在学商科和会计，后补充说明自己的热情，故选 A“I think I am passionate about it.”。"}
+,
+{id:8,part:"第2部分",type:"词汇",num:"11",stem:"The airline suspended flights to the island due to the volcanic ash clouds around the airport.（划线词：suspended）请选出最能保持原句含义的选项。",options:["A. halted","B. sustained","C. returned","D. managed"],answer:"A",analysis:"划线词“suspended”意为“暂停、中止”，与 A“halted（停止、暂停）”同义，故选 A。"},
+{id:9,part:"第2部分",type:"词汇",num:"12",stem:"Scientists collaborated to crack the secret of a rare plant species, leading to a groundbreaking discovery.（划线词：crack）请选出最能保持原句含义的选项。",options:["A. protect","B. keep","C. uncover","D. hide"],answer:"C",analysis:"划线词“crack”在此意为“破解、揭开（秘密）”，与 C“uncover（揭示、揭露）”同义，故选 C。"},
+{id:10,part:"第2部分",type:"词汇",num:"13",stem:"The reader responded positively to the book's exploration of new realms.（划线词：realms）请选出最能保持原句含义的选项。",options:["A. challenges","B. areas","C. trends","D. concepts"],answer:"B",analysis:"划线词“realms”意为“领域、范围”，与 B“areas（领域、区域）”同义，故选 B。"},
+{id:11,part:"第2部分",type:"词汇",num:"14",stem:"The candidate's blunder during the debate cost him the election.（划线词：blunder）请选出最能保持原句含义的选项。",options:["A. strategy","B. behavior","C. mistake","D. concession"],answer:"C",analysis:"划线词“blunder”意为“（严重的）错误、失误”，与 C“mistake（错误）”同义，故选 C。"},
+{id:12,part:"第2部分",type:"词汇",num:"15",stem:"Only when you've got enough credits will you be eligible to apply for the degree.（划线词：eligible）请选出最能保持原句含义的选项。",options:["A. liable","B. available","C. qualified","D. prepared"],answer:"C",analysis:"划线词“eligible”意为“有资格的、符合条件的”，与 C“qualified（有资格的）”同义，故选 C。"},
+{id:13,part:"第2部分",type:"词汇",num:"16",stem:"Experts will be called in to assess the environmental impact of the new construction project.（划线词：assess）请选出最能保持原句含义的选项。",options:["A. evaluate","B. monitor","C. understand","D. alleviate"],answer:"A",analysis:"划线词“assess”意为“评估、评定”，与 A“evaluate（评估）”同义，故选 A。"},
+{id:14,part:"第2部分",type:"词汇",num:"17",stem:"His campaign started modifying the logo to appeal to different types of voters.（划线短语：appeal to）请选出最能保持原句含义的选项。",options:["A. rally","B. represent","C. register","D. attract"],answer:"D",analysis:"划线短语“appeal to”意为“吸引、对……有吸引力”，与 D“attract（吸引）”同义，故选 D。"},
+{id:15,part:"第2部分",type:"词汇",num:"18",stem:"The tax increase was postponed amid worries of a slump in consumer spending.（划线词：slump）请选出最能保持原句含义的选项。",options:["A. doubt","B. guilt","C. decrease","D. restriction"],answer:"C",analysis:"划线词“slump”意为“（急剧）下降、暴跌”，与 C“decrease（下降、减少）”同义，故选 C。"},
+{id:16,part:"第2部分",type:"词汇",num:"19",stem:"It is vital for students to understand how to put into practice the knowledge in real world situations.（划线短语：put into practice）请选出最能保持原句含义的选项。",options:["A. apply","B. learn","C. obtain","D. seek"],answer:"A",analysis:"划线短语“put into practice”意为“付诸实践、应用”，与 A“apply（应用、运用）”同义，故选 A。"},
+{id:17,part:"第2部分",type:"词汇",num:"20",stem:"Periodic checks of the cooling system are necessary to maintain optimal engine performance.（划线词：Periodic）请选出最能保持原句含义的选项。",options:["A. Quick","B. Thorough","C. Constant","D. Regular"],answer:"D",analysis:"划线词“Periodic”意为“定期的、周期性的”，与 D“Regular（定期的）”同义，故选 D。"}
+,
+{id:18,part:"第3部分",type:"阅读理解",num:"21",pk:"p3a",passage:"NASA astronaut Frank Rubio set a new record on Monday, Sept. 11 for the longest single spaceflight conducted by a U.S. astronaut after spending 371 days in space, and his mission isn't over.\n\nRubio originally was scheduled to spend six months in space before his mission was extended to more than a year. Throughout his record-breaking mission, Rubio contributed to several science experiments geared toward understanding how spaceflight affects human physiology and psychology. 'Every day we spend up here, we know a little more about how the human body behaves in space,' Rubio explained. 'We continue to do studies in the station that will help us when we continue exploring deeper and deeper into our solar system.'\n\nRubio is the first astronaut to participate in a study examining how exercising with limited gym equipment affects the human body. Recognizing that crewmembers traveling to the Moon and elsewhere will not have enough room in their spacecraft for a treadmill（跑步机）, researchers are eager to determine whether other exercise plan could keep crews healthy on long missions. So rather than running on the space station's treadmill, Rubio exercised only on the space station's bicycle and weightlifting machine.\n\nHe is also one of a handful of astronauts to help researchers test whether an enhanced spaceflight diet can help humans better adapt to life in space. For this study, Rubio met with a specialist to create a customized diet loaded with nutrients, with an emphasis on foods such as fruits, vegetables, and fish. Scientists will evaluate whether consuming this diet boosted his immunity and improved how his body functioned.\n\nFor another experiment, Rubio helped nurture and monitor vegetables produced in the space station's Vegetable Production System, or Veggie. Future deep space missions will require astronauts to grow fresh food in space as an alternative to prepackaged food. This Veggie study evaluates regulations for growing produce in space, and whether plants grown in microgravity can help satisfy the dietary needs of astronauts on more distant spaceflight missions.",stem:"What is special about Rubio?",options:["A. He serves NASA for the longest time.","B. He has the longest spaceflight in the U.S.","C. He scheduled a single spaceflight.","D. His space mission seems endless."],answer:"B",analysis:"首段定位：Rubio 创下“the longest single spaceflight conducted by a U.S. astronaut”纪录（在太空 371 天），故选 B“He has the longest spaceflight in the U.S.”。"},
+{id:19,part:"第3部分",type:"阅读理解",num:"22",pk:"p3a",stem:"Why is treadmill a poor exercise choice in the spacecraft?",options:["A. Its maintenance is difficult.","B. It makes too much noise.","C. Its effect on human body is uncertain.","D. It is too big to fit in the spacecraft."],answer:"D",analysis:"第三段定位：前往月球等地的宇航员“will not have enough room in their spacecraft for a treadmill”，即跑步机太大、舱内放不下，故选 D。"},
+{id:20,part:"第3部分",type:"阅读理解",num:"23",pk:"p3a",stem:"What does an enhanced spaceflight diet (Para. 4) refer to?",options:["A. Meals favored by astronauts.","B. Customized foods with nutrients.","C. A diet created by researchers.","D. Foods that benefit mental health."],answer:"B",analysis:"第四段定位：Rubio 与专家一起“create a customized diet loaded with nutrients”，即定制的高营养食物，故选 B。"},
+{id:21,part:"第3部分",type:"阅读理解",num:"24",pk:"p3a",stem:"Why did Rubio grow vegetables in the space station?",options:["A. To cope with food shortage in space.","B. To prepare for distant space missions.","C. To reduce waste from prepackaged food.","D. To boost farming production on Earth."],answer:"B",analysis:"末段定位：“Future deep space missions will require astronauts to grow fresh food in space...”，种菜是为未来深空任务做准备，故选 B。"},
+{id:22,part:"第3部分",type:"阅读理解",num:"25",pk:"p3a",stem:"What is the main topic of this passage?",options:["A. An astronaut's contributions to space mission.","B. Feasible experiments in outer space.","C. Human body behavior and function in space.","D. Challenges in adapting to outer space."],answer:"A",analysis:"全文围绕 Rubio 创纪录的太空飞行及其参与的多项科学实验（锻炼、饮食、种菜）展开，主题是宇航员对太空任务的贡献，故选 A。"},
+{id:23,part:"第3部分",type:"阅读理解",num:"26",pk:"p3b",passage:"Mainstream science is finally recognizing the medicinal properties of ant honey, a substance native Australians have been using for centuries to treat colds and sore throats. According to a new study, this sweet substance carries strong antimicrobial（杀菌的）properties.\n\nScientists from the University of Sydney's Carter Lab, led by Professor Dee Carter, studied the Australian honeypot ant. This ant species is found in desert areas, mainly in Western Australia and the Northern Territory. The honey these ants make isn't stored in cells in hives but inside other ants. Certain ants in their colonies are fed flower juice by other ants until their bellies swell to the size of grapes. Then when food is scarce, the honey-filled ants vomit up（吐出）their sweet liquid for the other ants to eat.\n\n'For our people, honey ants are more than just a food source. Digging for them is a very enjoyable way of life and a way of bringing the family together,' says Danny Ulrich who operates honeypot ant tours in Western Australia. 'Our people have been enjoying sweet honey ants for thousands of years. As for its medicinal use, we use it for sore throats and sometimes as a skin cream to help keep infections from getting worse.'\n\nThe study conducted by the Carter Lab marks the first time that ant honey has been investigated for its medicinal properties. The researchers found that ant honey possesses 'unique' antimicrobial activity against bacteria. They confirmed that its mechanism of action is different from that of Manuka honey, a well-established treatment for wounds and skin infections. Manuka honey is produced from the flowers of a native New Zealand tree.\n\n'Our research shows that honeypot ant honey possesses a distinctive effect that sets it apart from other types of honey,' says Dr. Kenya Fernandes from the Carter Lab team. 'This discovery means that honeypot ant honey could contain compounds with substantial antimicrobial power; identifying these could provide us with starting points for developing new and different types of antibiotics.'",stem:"What do we learn about native Australians in Paragraph 1?",options:["A. They cure sore throats with ant honey.","B. They stopped using ant honey long ago.","C. They participated in an ant honey study.","D. They found a new medicinal property of ant honey."],answer:"A",analysis:"首段定位：原住民“have been using it for centuries to treat colds and sore throats”，即用蜜蚁蜂蜜治疗喉咙痛，故选 A。"},
+{id:24,part:"第3部分",type:"阅读理解",num:"27",pk:"p3b",stem:"Where do Australian honeypot ants store their honey?",options:["A. In their hives.","B. In the flowers.","C. Inside their bodies.","D. Inside the grapes."],answer:"C",analysis:"第二段定位：“The honey these ants make isn't stored in cells in hives but inside other ants”，即储存在其他蚂蚁体内，故选 C。"},
+{id:25,part:"第3部分",type:"阅读理解",num:"28",pk:"p3b",stem:"What is Ulrich's job as mentioned in Paragraph 3?",options:["A. A local cook.","B. A leading scientist.","C. A family doctor.","D. A tour agent."],answer:"D",analysis:"第三段定位：“says Danny Ulrich who operates honeypot ant tours in Western Australia”，即经营蜜蚁参观旅游业务，故选 D“A tour agent.”。"},
+{id:26,part:"第3部分",type:"阅读理解",num:"29",pk:"p3b",stem:"What do we know about ant honey from the Carter Lab's study?",options:["A. It was investigated for the first time.","B. It has a special effect against bacteria.","C. It has its origin from New Zealand.","D. It works the same way as other honey."],answer:"B",analysis:"第四、五段定位：ant honey 具有“unique antimicrobial activity against bacteria”“a distinctive effect that sets it apart from other types of honey”，故选 B。"},
+{id:27,part:"第3部分",type:"阅读理解",num:"30",pk:"p3b",stem:"What would be the next step for the Carter Lab team?",options:["A. To identify the compounds of ant honey.","B. To propose a new treatment for colds.","C. To develop more honey products.","D. To call for action to protect the ants."],answer:"A",analysis:"末段定位：“identifying these could provide us with starting points for developing new and different types of antibiotics”，即下一步是识别其中有效化合物，故选 A。"}
+,
+{id:28,part:"第3部分",type:"阅读理解",num:"31",pk:"p3c",passage:"Coffee makes you happy\nThe researcher David Warburton observed what I could have told him without writing a study: A low dose of caffeine（咖啡因）can lead to a 'significant increase in happiness and calmness and decrease in tenseness.' He also noted that, among the study participants, these effects did not come from alleviating a desire from a caffeine addiction, the effect was true pure, and wonderful. A miracle, really.\n\nCaffeine is a gift in ways besides happiness. Combined with exercise, it can improve cognitive performance, and if you've been sleeping less than optimally, it can enhance your reaction time and logical reasoning abilities. Remember this as you head out in traffic: The life your coffee saves could be your own. Nothing in life is free, of course. Consuming more caffeine over time may lead to a state of tolerance, in which caffeine has a smaller effect after chronic use. However, this 'problem' is really just an opportunity to enjoy more coffee.\n\nSome people believe that the solution to tolerance is to hit the reset button. My wife is one of them. Recently, noticing the increases in my consumption over the years, she innocently proposed that I 'take a little break' from coffee. The very suggestion made me fly into a rage. 'Here's an idea,' I replied, heart rate soaring. 'Why don't we just live apart for a year so it feels more like it did when we were first married?' An overreaction? I think not. I'm at peace with the long-term effects of my devotion to coffee.\n\nResearch from Japan shows that habitually drinking coffee reduces all-cause mortality. Studies in mice suggest that it does so by, among other things, encouraging autophagy, the biological process of cleaning out cellular trash, which naturally slows as we age. Coffee has also been found to reduce levels of fatty acid in the blood of aged mice, which has been linked to diabetes and cancer in humans.\n\nAssuming that coffee does keep me alive for an extra few days or decades, I know how I'll spend them: drinking more coffee, of darker and darker roasts, whose strong smell helps combat age-related loss of taste and smell.",stem:"The 'miracle' in the first paragraph refers to ______.",options:["A. the exciting research result","B. the strong caffeine addiction","C. the wonderful effect of coffee","D. Warburton's achievement"],answer:"C",analysis:"首段定位：咖啡因能“significant increase in happiness and calmness and decrease in tenseness”，作者称这一美妙效果为“A miracle, really”，即咖啡的神奇功效，故选 C。"},
+{id:29,part:"第3部分",type:"阅读理解",num:"32",pk:"p3c",stem:"Caffeine brings the following benefits EXCEPT ______.",options:["A. enhancing your happiness","B. making you more intelligent","C. improving your reasoning abilities","D. helping you sleep optimally"],answer:"D",analysis:"第二段列举咖啡因益处：提升幸福感、改善认知、提高反应与逻辑推理。文中并未说帮助优化睡眠，反而提到“if you've been sleeping less than optimally”时能增强反应力，故选 D。"},
+{id:30,part:"第3部分",type:"阅读理解",num:"33",pk:"p3c",stem:"The phrase 'hit the reset button' (Para. 3) means '______'.",options:["A. stop drinking coffee for a while","B. lower caffeine consumption","C. live apart from one's family","D. reduce levels of fatty acid"],answer:"A",analysis:"第三段：面对耐受问题，妻子建议“take a little break” from coffee，即“暂时不喝咖啡”，故选 A。"},
+{id:31,part:"第3部分",type:"阅读理解",num:"34",pk:"p3c",stem:"What is the effect of drinking coffee regularly, according to Japanese research?",options:["A. It increases the risk of death.","B. It helps clean out cellular trash.","C. It poses threat to mental health.","D. It is a cause of aging problems."],answer:"B",analysis:"第四段定位：“Research from Japan shows that habitually drinking coffee reduces all-cause mortality... encouraging autophagy, the biological process of cleaning out cellular trash”，即有助于清理细胞垃圾，故选 B。"},
+{id:32,part:"第3部分",type:"阅读理解",num:"35",pk:"p3c",stem:"What does the author indicate in the last paragraph?",options:["A. He will spend more time promoting coffee.","B. He will try to find a substitute for coffee.","C. He will consume more and stronger coffee.","D. He will develop a better habit of drinking."],answer:"C",analysis:"末段定位：“I know how I'll spend them: drinking more coffee, of darker and darker roasts”，即喝更多、更浓的咖啡，故选 C。"},
+{id:33,part:"第3部分",type:"阅读理解",num:"36",pk:"p3d",passage:"Humans help each other - it's one of the foundations of civilized society. But a new study by scientists at the University of California, Berkeley, reveals that a lack of sleep weakens this fundamental human attribute, with real-world consequences.\n\nThe study, led by UC Berkeley research scientists Eti Simon and Matthew Walker, adds to a growing body of evidence demonstrating that inadequate sleep not only harms the mental and physical well-being of an individual, but also compromises the bonds between individuals. In the study, the scientists placed 24 healthy volunteers in a functional magnetic resonance imager (fMRI)（核磁共振成像仪）to scan their brains after eight hours of sleep and after a night of no sleep. They found that areas of the brain that form the mind network were less active after a sleepless night.\n\n'When we think about other people, this network engages and allows us to comprehend what other people's needs are: What are they thinking about? Do they need help?' Ben Simon said. 'However, this network was markedly impaired when individuals were sleep deprived. It's as though these parts of the brain fail to respond when we are trying to interact with other people after not getting enough sleep.'\n\nThe scientists also tracked more than 100 people online over three or four nights, and measured the quality of their sleep - how long they slept, how many times they woke up - and then assessed their desire to help others, such as holding an elevator door open for someone else, volunteering or helping an injured stranger on the street. They found that a decrease in the quality of someone's sleep from one night to the next predicted a significant decrease in the desire to help other people from one subsequent day to the next.\n\nLooking at the big picture, a lack of sleep makes people less sympathetic and less generous. 'Sleep, it turns out, is an incredible lubricant to connected and generous human behavior,' Simon said. 'It is time as a society to abandon the idea that sleep is unnecessary or a waste and, without feeling embarrassed, start getting the sleep that we need. It is the best form of kindness we can offer ourselves, as well as the people around us.'",stem:"What can be learned about the study by Simon and Walker?",options:["A. It examines sleep from a fresh perspective.","B. It confirms the findings of other sleep research.","C. It is a major breakthrough in the study of sleep.","D. It is part of a long-term research project on sleep."],answer:"A",analysis:"该研究从“睡眠影响人与人之间的互助行为”这一新颖角度切入（reveals that a lack of sleep weakens this fundamental human attribute），故选 A“It examines sleep from a fresh perspective.”。"},
+{id:34,part:"第3部分",type:"阅读理解",num:"37",pk:"p3d",stem:"What did the fMRI result indicate about the mind network?",options:["A. It was activated to make sleep much easier.","B. It was enhanced when sleep loss occurred.","C. It formed obstacles to normal comprehension.","D. It was less responsive after sleep deprivation."],answer:"D",analysis:"第二、三段定位：彻夜未眠后大脑“mind network”区域“less active”“markedly impaired”，即睡眠剥夺后反应减弱，故选 D。"},
+{id:35,part:"第3部分",type:"阅读理解",num:"38",pk:"p3d",stem:"What did the scientists find after tracking people online and measuring their sleep?",options:["A. People with poor sleep were less keen to help others.","B. Sleep quality was a poor indicator of generosity.","C. Generous human behavior followed a downward trend.","D. The willingness to help other people was hard to predict."],answer:"A",analysis:"第四段定位：睡眠质量下降会“predict a significant decrease in the desire to help other people”，即睡眠差的人更不愿助人，故选 A。"},
+{id:36,part:"第3部分",type:"阅读理解",num:"39",pk:"p3d",stem:"What does Simon emphasize in the last paragraph?",options:["A. The risks of poor sleep tend to be underestimated.","B. The link between sleep and health remains unknown.","C. Adequate sleep helps improve interpersonal connection.","D. Better approaches to improving sleep should be developed."],answer:"C",analysis:"末段定位：“Sleep... is an incredible lubricant to connected and generous human behavior”，并呼吁社会重视睡眠，强调充足睡眠有助于人际联结，故选 C。"},
+{id:37,part:"第3部分",type:"阅读理解",num:"40",pk:"p3d",stem:"Which of the following can be the best title for this passage?",options:["A. Lack of sleep makes us less generous","B. Mutual help benefits a civilized society","C. Why people's sleeping patterns matter","D. Why people suffer from sleep deprivation"],answer:"A",analysis:"全文主旨：睡眠不足会削弱人的同情心与慷慨程度（a lack of sleep makes people less sympathetic and less generous），故选 A。"}
+,
+{id:38,part:"第3部分",type:"阅读理解",num:"41",pk:"p3e",passage:"With the cost-of-living crisis biting, more people are considering living in alternative housing, particularly vans and houseboats. A recent study found that 51% of millennials（千禧一代）would be willing to live in an alternative dwelling to get a foot on the first step of the ladder, with 53% saying they would live in a van, and 33% up for living in a houseboat.\n\nWhen you live in a van, there's no mortgage or rent to pay, and there aren't any utility bills. Your main expense will be petrol for the van, so you can lower your costs even further by staying in one place for as long as possible. This allows you to work fewer hours if you choose. Living in a van can be a liberating experience. Working less gives you more time to travel, enjoy hobbies, work on side projects, or simply relax and enjoy yourself.\n\nVan life can seem enticing with its reduced expenses and enhanced freedom. However this lifestyle comes with many challenges and isn't always as glamorous as it is portrayed on social media. Keeping yourself clean is one of the challenges of this lifestyle. A survey found that 28% of van lifers shower at the gym, 21% use built-in van showers, and 20% use campsite facilities, which normally come with a fee. A combined 13% said they bathe with baby wipes, or in rivers or seas.\n\nAlthough there is a range of sizes of vans and houseboats, none will offer you the same amount of space as most conventional homes.\n\nComment 1: Using a toilet while living in a van isn't always an enjoyable topic to discuss. Some van dwellers use 'pee bottles' or simply relieve themselves in the 'open space' outside the van. This isn't for everyone.\n\nComment 2: We're always on our own schedule and have been able to experience each destination in a totally different way. If we end up really liking a specific spot, we can choose to stay longer if we want.\n\nComment 3: The size of the van can make for constant re-organisation of things, and a lot of bumping elbows.\n\nComment 4: If your van or boat breaks down and needs to be repaired or replaced, this can leave you in a tricky situation as it is your home. Ours took almost a month to fix, and we had to get it towed 200 miles. Since we had to stay with family out of town we weren't able to work.",stem:"What makes more people think about living in vans and houseboats?",options:["A. The desire to try new things.","B. The rising living expenses.","C. The pressure to find a job.","D. The increasing commute time."],answer:"B",analysis:"首段定位：“With the cost-of-living crisis biting, more people are considering living in alternative housing”，即生活成本上升促使人们考虑房车/船屋，故选 B。"},
+{id:39,part:"第3部分",type:"阅读理解",num:"42",pk:"p3e",stem:"What might be the biggest expense if you choose to live in a van?",options:["A. Mortgage.","B. Utility.","C. Travel.","D. Fuel."],answer:"D",analysis:"第二段定位：“Your main expense will be petrol for the van”，即最大开销是燃油（Fuel），故选 D。"},
+{id:40,part:"第3部分",type:"阅读理解",num:"43",pk:"p3e",stem:"The word 'enticing' (Para. 3) probably means '______'.",options:["A. expensive","B. promising","C. attractive","D. challenging"],answer:"C",analysis:"第三段：房车生活“with its reduced expenses and enhanced freedom”看起来诱人，与 C“attractive（有吸引力的）”含义一致，故选 C。"},
+{id:41,part:"第3部分",type:"阅读理解",num:"44",pk:"p3e",stem:"Which comment agrees that vans and houseboats do not offer enough space?",options:["A. Comment 1.","B. Comment 2.","C. Comment 3.","D. Comment 4."],answer:"C",analysis:"Comment 3 提到“The size of the van can make for constant re-organisation of things, and a lot of bumping elbows”，即空间小、需要不停整理、容易碰肘，故选 C。"},
+{id:42,part:"第3部分",type:"阅读理解",num:"45",pk:"p3e",stem:"Which comment indicates the conveniences of living in vans?",options:["A. Comment 1.","B. Comment 2.","C. Comment 3.","D. Comment 4."],answer:"B",analysis:"Comment 2 提到“We're always on our own schedule... we can choose to stay longer if we want”，体现自主安排行程的便利性，故选 B。"}
+,
+{id:43,part:"第4部分",type:"完形填空",num:"46",pk:"p4",passage:"Artificial intelligence (AI) is more present in our lives than ever. With varied uses, AI can __46__ what we want to see as we browse social media, __47__ helping to solve global challenges like hunger, environmental changes, and epidemics. This technology has countless __48__ in the real world. A McKinsey survey illustrates that AI adoption followed a(n) __49__ trend in the year 2021 and continues to do so. According to the survey, '56 percent of all respondents __50__ AI adoption in at least one function.' However, AI technology is not always __51__ - AI can violate privacy, AI-generated output cannot always be explained, and AI can be __52__. When the data feeding an AI system is not representative of the diversity and plurality of our societies, it can __53__ discriminatory outcomes.\n\nAn often-cited example is facial recognition technology. Used to access mobile phones and bank __54__, it's also being increasingly employed by law enforcement authorities. With emerging problems accurately identifying women and darker-skinned people, facial recognition is far from being perfected. This is not surprising when you look at how AI is developed: Only 1 in 10 software developers worldwide are women. __55__, developers come overwhelmingly from western countries. Therefore, AI ethics policies should be formulated from the start.",stem:"选择最佳选项填入空格 __46__。",options:["A. predict","B. change","C. prove","D. order"],answer:"A",analysis:"句意：AI 能预测（predict）我们浏览社交媒体时想看什么，故选 A。"},
+{id:44,part:"第4部分",type:"完形填空",num:"47",pk:"p4",stem:"选择最佳选项填入空格 __47__。",options:["A. as long as","B. as well as","C. as far as","D. as much as"],answer:"B",analysis:"句意：AI 还能（as well as）帮助解决全球性挑战。as well as 表“也、以及”，连接并列成分，故选 B。"},
+{id:45,part:"第4部分",type:"完形填空",num:"48",pk:"p4",stem:"选择最佳选项填入空格 __48__。",options:["A. applications","B. drawbacks","C. concerns","D. devices"],answer:"A",analysis:"句意：这项技术在现实世界有无数的应用（applications），故选 A。"},
+{id:46,part:"第4部分",type:"完形填空",num:"49",pk:"p4",stem:"选择最佳选项填入空格 __49__。",options:["A. backward","B. downward","C. outward","D. upward"],answer:"D",analysis:"句意：麦肯锡调查显示 AI 采用在 2021 年呈上升（upward）趋势并持续，故选 D。"},
+{id:47,part:"第4部分",type:"完形填空",num:"50",pk:"p4",stem:"选择最佳选项填入空格 __50__。",options:["A. report","B. conduct","C. reform","D. analyze"],answer:"A",analysis:"句意：56% 的受访者报告（report）至少在某一职能中采用了 AI，故选 A。"},
+{id:48,part:"第4部分",type:"完形填空",num:"51",pk:"p4",stem:"选择最佳选项填入空格 __51__。",options:["A. possible","B. beneficial","C. unusual","D. random"],answer:"B",analysis:"句意：然而 AI 技术并非总是有益的（beneficial），后文列举隐私侵犯等问题，故选 B。"},
+{id:49,part:"第4部分",type:"完形填空",num:"52",pk:"p4",stem:"选择最佳选项填入空格 __52__。",options:["A. praised","B. updated","C. confused","D. biased"],answer:"D",analysis:"句意：AI 可能会有偏见（biased），后文提到数据不具代表性会产生歧视性结果，故选 D。"},
+{id:50,part:"第4部分",type:"完形填空",num:"53",pk:"p4",stem:"选择最佳选项填入空格 __53__。",options:["A. review","B. reflect","C. produce","D. question"],answer:"C",analysis:"句意：当数据不具代表性时，AI 可能产生（produce）歧视性结果，故选 C。"},
+{id:51,part:"第4部分",type:"完形填空",num:"54",pk:"p4",stem:"选择最佳选项填入空格 __54__。",options:["A. accounts","B. clerks","C. branches","D. interests"],answer:"A",analysis:"句意：人脸识别用于解锁手机和访问银行账户（bank accounts），故选 A。"},
+{id:52,part:"第4部分",type:"完形填空",num:"55",pk:"p4",stem:"选择最佳选项填入空格 __55__。",options:["A. Otherwise","B. However","C. Furthermore","D. Consequently"],answer:"C",analysis:"句意：此外（Furthermore），开发者绝大多数来自西方国家。此处是补充说明，故选 C。"}
+,
+{id:53,part:"第5部分",type:"短文完成",num:"56",pk:"p5a",passage:"Text One\n\nSection A 选项：A. cars with drivers　B. along a street　C. on an icy road\nSection B 选项：A. park themselves　B. slipping　C. move closer together than\n\n【短文】无人驾驶技术（Driverless Cars）\n\nMany new cars can park themselves __56__, so drivers don't need to worry about parallel parking. When a car is slipping __57__, the Anti-Lock Braking System (ABS) helps to keep it safe. Experts believe that in the future driverless cars will be safer than cars __58__.\n\nMost cars already have some driverless technology like the Anti-Lock Braking System (ABS). When a car is __59__ the ABS can tap the brakes quickly. The wheels turn slowly but do not stop. The driver can then steer the car to safety. Many cars also have parallel parking technology. These cars can __60__. No driver is needed. As cars get more driverless technology, they will be safer than cars with a driver. Driverless cars can __61__. This may make driving on busy roads safer. Also, automated vehicles don't get sleepy or text on their phones while driving.",stem:"（Section A）从 A/B/C 中选择最合适的短语填入空格 __56__。",options:["A. cars with drivers","B. along a street","C. on an icy road"],answer:"B",analysis:"句意：许多新车可以沿街自动泊车（park themselves along a street），故选 B“along a street”。"},
+{id:54,part:"第5部分",type:"短文完成",num:"57",pk:"p5a",stem:"（Section A）从 A/B/C 中选择最合适的短语填入空格 __57__。",options:["A. cars with drivers","B. along a street","C. on an icy road"],answer:"C",analysis:"句意：当汽车在结冰路面上打滑时（slipping on an icy road），ABS 防抱死系统可帮助保持安全，故选 C“on an icy road”。"},
+{id:55,part:"第5部分",type:"短文完成",num:"58",pk:"p5a",stem:"（Section A）从 A/B/C 中选择最合适的短语填入空格 __58__。",options:["A. cars with drivers","B. along a street","C. on an icy road"],answer:"A",analysis:"句意：未来无人驾驶汽车将比有人驾驶的汽车更安全（safer than cars with drivers），故选 A“cars with drivers”。"},
+{id:56,part:"第5部分",type:"短文完成",num:"59",pk:"p5a",stem:"（Section B）从 A/B/C 中选择最合适的短语填入空格 __59__。",options:["A. park themselves","B. slipping","C. move closer together than"],answer:"B",analysis:"原文定位：When a car is __59__（打滑）the ABS can tap the brakes quickly. 即“当汽车打滑时”，故选 B“slipping”。"},
+{id:57,part:"第5部分",type:"短文完成",num:"60",pk:"p5a",stem:"（Section B）从 A/B/C 中选择最合适的短语填入空格 __60__。",options:["A. park themselves","B. slipping","C. move closer together than"],answer:"A",analysis:"原文定位：These cars can __60__（自动泊车）. No driver is needed. 结合前文平行泊车技术，故选 A“park themselves”。"},
+{id:58,part:"第5部分",type:"短文完成",num:"61",pk:"p5a",stem:"（Section B）从 A/B/C 中选择最合适的短语填入空格 __61__。",options:["A. park themselves","B. slipping","C. move closer together than"],answer:"C",analysis:"原文定位：Driverless cars can __61__（比……更紧密地靠近）. This may make driving on busy roads safer. 故选 C“move closer together than”，指无人驾驶车能比人类驾驶更紧凑地跟进，提高繁忙道路安全。"},
+{id:59,part:"第5部分",type:"短文完成",num:"62",pk:"p5b",passage:"Text Two\n\nSection A 选项：A. rely on　B. adaptable　C. a threat to\nSection B 待填空句子：A. they're smart, __62__, creative and loud　B. others __63__ cities as a refuge from extinction　C. others __64__ the local wildlife\n\n【短文】Parrots（鹦鹉）\n\nToday at least 60% of the world's 380 or so parrot species have a breeding population in a country outside their natural geographical range. Each successful transplant has its own story: Some are friendly, __65__; some are abundant in their home ranges, whereas __66__. All are by-products of the pet trade and animal trafficking around the world. Because they're parrots, __67__. \"They're animals that are really social, and they live in cognitively complex social environments,\" says Grace Smith-Vidaurre, a postdoctoral fellow at the Rockefeller University. \"They're like humans in a lot of ways.\"",stem:"（Section A）从 A/B/C 中选择最合适的单词填入空格 __62__（位于 Section B 的句子 A 中）。",options:["A. rely on","B. adaptable","C. a threat to"],answer:"B",analysis:"句子 A 为“they're smart, __62__, creative and loud”（它们聪明、适应力强、富有创造力且吵闹），用形容词“adaptable（适应性强的）”最合适，故选 B。"},
+{id:60,part:"第5部分",type:"短文完成",num:"63",pk:"p5b",stem:"（Section A）从 A/B/C 中选择最合适的单词填入空格 __63__（位于 Section B 的句子 B 中）。",options:["A. rely on","B. adaptable","C. a threat to"],answer:"A",analysis:"句子 B 为“others __63__ cities as a refuge from extinction”（另一些依靠城市作为躲避灭绝的庇护所），填“rely on（依靠）”最合适，故选 A。"},
+{id:61,part:"第5部分",type:"短文完成",num:"64",pk:"p5b",stem:"（Section A）从 A/B/C 中选择最合适的单词填入空格 __64__（位于 Section B 的句子 C 中）。",options:["A. rely on","B. adaptable","C. a threat to"],answer:"C",analysis:"句子 C 为“others __64__ the local wildlife”（另一些对当地野生动物构成威胁），填“a threat to（对……构成威胁）”最合适，故选 C。"},
+{id:62,part:"第5部分",type:"短文完成",num:"65",pk:"p5b",stem:"（Section B）从 A/B/C 三句中选出最合适的一句填入空格 __65__。",options:["A. they're smart, adaptable, creative and loud","B. others rely on cities as a refuge from extinction","C. others a threat to the local wildlife"],answer:"B",analysis:"原文：Some are friendly, __65__. 前文“Some are friendly”与“others rely on cities as a refuge from extinction”形成 Some...others 对比，故选 B。"},
+{id:63,part:"第5部分",type:"短文完成",num:"66",pk:"p5b",stem:"（Section B）从 A/B/C 三句中选出最合适的一句填入空格 __66__。",options:["A. they're smart, adaptable, creative and loud","B. others rely on cities as a refuge from extinction","C. others a threat to the local wildlife"],answer:"A",analysis:"原文：some are abundant in their home ranges, whereas __66__. 根据答案与语境，此处以鹦鹉的整体特征句“they're smart, adaptable, creative and loud”衔接“whereas（而）”，故选 A。"},
+{id:64,part:"第5部分",type:"短文完成",num:"67",pk:"p5b",stem:"（Section B）从 A/B/C 三句中选出最合适的一句填入空格 __67__。",options:["A. they're smart, adaptable, creative and loud","B. others rely on cities as a refuge from extinction","C. others a threat to the local wildlife"],answer:"C",analysis:"原文：Because they're parrots, __67__. 结合上文提到这些鹦鹉是宠物贸易与动物走私的副产品，落脚到“另一些对当地野生动物构成威胁”，故选 C。"}
+,
+{id:65,part:"第5部分",type:"短文完成",num:"68",pk:"p5c",passage:"Text Three\n\nSection A 选项：A. hit a ball　B. tactics　C. prize money　D. millions of fans\nSection B 待填空句子：A. earn as much __68__ as men　B. uses a racket to __69__　C. watched on TV by __70__　D. learn how to use __71__ to win\n\n【短文】Tennis（网球）\n\nTennis is one of the world's most widely-played sports, enjoyed by players of all ages. It is also a popular spectator sport, with star players in glamorous tournaments（锦标赛）__72__ all over the world. Women's matches attract as much interest as the men's, and tennis is one of the few professional sports in which women can __73__.\n\nSingles matches are played between two players and doubles matches are between two teams of two players. Each player __74__ over a net into their opponent's side of a court. A player wins a point when his or her opponent cannot return a shot, or the opponent's shot doesn't land in the court. Professional players learn to use many different shots and __75__ such as by playing to their opponent's weaknesses.",stem:"（Section A）从 A/B/C/D 中选择最合适的短语填入空格 __68__（位于 Section B 的句子 A 中）。",options:["A. hit a ball","B. tactics","C. prize money","D. millions of fans"],answer:"C",analysis:"句子 A 为“earn as much __68__ as men”（赚得和男性一样多的奖金），填“prize money（奖金）”最合适，故选 C。"},
+{id:66,part:"第5部分",type:"短文完成",num:"69",pk:"p5c",stem:"（Section A）从 A/B/C/D 中选择最合适的短语填入空格 __69__（位于 Section B 的句子 B 中）。",options:["A. hit a ball","B. tactics","C. prize money","D. millions of fans"],answer:"A",analysis:"句子 B 为“uses a racket to __69__”（用球拍击球），填“hit a ball（击球）”最合适，故选 A。"},
+{id:67,part:"第5部分",type:"短文完成",num:"70",pk:"p5c",stem:"（Section A）从 A/B/C/D 中选择最合适的短语填入空格 __70__（位于 Section B 的句子 C 中）。",options:["A. hit a ball","B. tactics","C. prize money","D. millions of fans"],answer:"D",analysis:"句子 C 为“watched on TV by __70__”（被数百万球迷在电视上观看），填“millions of fans（数百万球迷）”最合适，故选 D。"},
+{id:68,part:"第5部分",type:"短文完成",num:"71",pk:"p5c",stem:"（Section A）从 A/B/C/D 中选择最合适的短语填入空格 __71__（位于 Section B 的句子 D 中）。",options:["A. hit a ball","B. tactics","C. prize money","D. millions of fans"],answer:"B",analysis:"句子 D 为“learn how to use __71__ to win”（学会如何运用战术取胜），填“tactics（战术）”最合适，故选 B。"},
+{id:69,part:"第5部分",type:"短文完成",num:"72",pk:"p5c",stem:"（Section B）从 A/B/C/D 四句中选出最合适的一句填入空格 __72__。",options:["A. earn as much prize money as men","B. uses a racket to hit a ball","C. watched on TV by millions of fans","D. learn how to use tactics to win"],answer:"C",analysis:"原文：with star players in glamorous tournaments __72__ all over the world. 即“锦标赛中的明星球员被全世界数百万球迷在电视上观看”，故选 C“watched on TV by millions of fans”。"},
+{id:70,part:"第5部分",type:"短文完成",num:"73",pk:"p5c",stem:"（Section B）从 A/B/C/D 四句中选出最合适的一句填入空格 __73__。",options:["A. earn as much prize money as men","B. uses a racket to hit a ball","C. watched on TV by millions of fans","D. learn how to use tactics to win"],answer:"A",analysis:"原文：tennis is one of the few professional sports in which women can __73__. 即“网球是为数不多的女性可以和男性赚得一样多奖金的职业运动之一”，故选 A。"},
+{id:71,part:"第5部分",type:"短文完成",num:"74",pk:"p5c",stem:"（Section B）从 A/B/C/D 四句中选出最合适的一句填入空格 __74__。",options:["A. earn as much prize money as men","B. uses a racket to hit a ball","C. watched on TV by millions of fans","D. learn how to use tactics to win"],answer:"B",analysis:"原文：Each player __74__ over a net into their opponent's side of a court. 即“每位球员用球拍将球击过球网落到对方半场”，故选 B“uses a racket to hit a ball”。"},
+{id:72,part:"第5部分",type:"短文完成",num:"75",pk:"p5c",stem:"（Section B）从 A/B/C/D 四句中选出最合适的一句填入空格 __75__。",options:["A. earn as much prize money as men","B. uses a racket to hit a ball","C. watched on TV by millions of fans","D. learn how to use tactics to win"],answer:"D",analysis:"原文：Professional players learn to use many different shots and __75__ such as by playing to their opponent's weaknesses. 即“职业球员学会运用各种击球并学会如何运用战术取胜（如攻击对手弱点）”，故选 D。"}
+,
+{id:73,part:"第6部分",type:"翻译",num:"—",stem:"请将下列英文段落翻译成中文。\n\nWhen you're enjoying the outdoors — whether you're at a local park or camping in the wilderness — it's important to minimize your impact on the environment around you. Anything you leave behind, even by accident, could be harmful to animals or plants. To reduce your impact on nature, practice the principles of \"leave no trace.\" That means leaving an area exactly as you found it when you arrived. Always look around to make sure you picked up everything you brought with you. It's also best not to take items you find in nature. Rocks, shells, and sticks are part of the local ecosystem and should be left alone.",options:[],answer:"—",ref:"【参考译文】当你享受户外活动时——无论你是在当地的公园，还是在野外露营——尽量减少对周围环境的影响，这是很重要的。你留下的任何东西，哪怕是不小心留下的，都可能对动植物有害。为了减少对自然的影响，践行“不留痕迹”原则。这意味着当你离开一个地方时，要让它保持你刚到达时的样子。一定要环顾四周，确保带走了你带来的所有东西。最好也不要拿走你在大自然中发现的物品。石头、贝壳和树枝都是当地生态系统的一部分，应该让它们留在原处。"},
+{id:74,part:"第7部分",type:"写作",num:"—",stem:"Directions: Write a composition in no less than 150 words on the topic: The Importance of Lifelong Learning. You could write according to the hints given below. Write your composition on the Answer Sheet.\n\n提示：In the rapidly changing world today, the value of lifelong learning has become increasingly evident. Discuss the significance of lifelong learning in individuals' personal and professional development. Include examples and reasons to support your viewpoint.",options:[],answer:"—",ref:"【写作思路】首段点题：当今世界日新月异，终身学习的重要性日益凸显。主体段分两点论证：①个人成长——终身学习能开阔视野、提升能力、保持思维活力；②职业发展——技术更新快，持续学习才能不被淘汰、获得晋升与转型机会（可举例：一名传统行业从业者通过在线学习掌握数字技能实现转岗）。末段总结：终身学习不仅是一种习惯，更是一种生活态度，是个人价值与竞争力的源泉。\n\n【参考范文】In the rapidly changing world today, the value of lifelong learning has become increasingly evident. With technology developing at an astonishing speed, knowledge acquired in school is far from enough to support one's whole career.\n\nFor individuals, lifelong learning broadens our horizons and keeps our minds active. By constantly acquiring new knowledge, we can better understand the world and improve ourselves. For example, many elderly people learn to use smartphones and the Internet, which greatly enriches their daily lives. In terms of career, continuous learning enables us to keep up with the latest trends in our fields. A worker who keeps upgrading his skills is more likely to get promoted or make a successful career change. On the contrary, those who stop learning may fall behind and even lose their jobs.\n\nIn conclusion, lifelong learning is not only a habit but also a positive attitude towards life. It brings us both personal growth and professional success, and we should never stop learning."}
+];
+/* ==================== 数据与常量 ==================== */
+const PARTS=[
+  {key:"口语交际", icon:"💬", desc:"对话补全 · 考查日常交际能力"},
+  {key:"词汇", icon:"🔤", desc:"选择填空 · 考查词汇与固定搭配"},
+  {key:"阅读理解", icon:"📖", desc:"篇章阅读 · 理解主旨与细节"},
+  {key:"完形填空", icon:"🧩", desc:"语篇完形 · 综合语言能力"},
+  {key:"短文完成", icon:"📝", desc:"选句选词 · 篇章衔接与语法"},
+  {key:"翻译", icon:"🌐", desc:"英译汉 · 理解并准确表达"},
+  {key:"写作", icon:"✍️", desc:"短文写作 · 不少于150词"}
+];
+const LS_REC="ew_rec_v1", LS_DAY="ew_day_v1";
+let records=load(LS_REC,{});   // {id: 'ok'|'bad'}
+let dayStat=load(LS_DAY,{});   // {'YYYY-MM-DD': {a,ok}}
+
+function load(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+/* 共享文章映射：pk -> passage（阅读/完形/短文每篇首题带全文） */
+const PK_MAP={};
+QUESTIONS.forEach(q=>{ if(q.pk && q.passage) PK_MAP[q.pk]=q.passage; });
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* ==================== 页面导航 ==================== */
+function go(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=$('page-'+name); if(pg) pg.classList.add('active');
+  document.querySelectorAll('.bottom-nav .tab').forEach(t=>t.classList.toggle('active',t.dataset.page===name));
+  if(name==='home') renderHome();
+  if(name==='parts') renderParts();
+  if(name==='wrong') renderWrong();
+  if(name==='stats') renderStats();
+  window.scrollTo(0,0);
+}
+
+/* ==================== 概览页 ==================== */
+function renderHome(){
+  const t=today(); const d=dayStat[t]||{a:0,ok:0};
+  $('hToday').textContent=d.a; $('hTodayOk').textContent=d.ok;
+  $('hTotalQ').textContent=QUESTIONS.length;
+  $('hWrong2').textContent=getWrongIds().length;
+  renderHead();
+}
+function renderHead(){
+  let ok=0,bad=0; Object.values(records).forEach(v=>{if(v==='ok')ok++;else if(v==='bad')bad++;});
+  const acc=ok+bad>0?Math.round(ok/(ok+bad)*100):0;
+  $('hOk').textContent=ok; $('hBad').textContent=bad;
+  $('hWrong').textContent=getWrongIds().length; $('hAcc').textContent=acc+'%';
+}
+function getWrongIds(){return Object.keys(records).filter(id=>records[id]==='bad');}
+
+/* ==================== 题型分组 ==================== */
+function renderParts(){
+  let h1='',h2='';
+  PARTS.forEach(p=>{
+    const list=QUESTIONS.filter(q=>q.type===p.key);
+    const wrong=list.filter(q=>records[q.id]==='bad').length;
+    h1+='<div class="part-item" onclick="openPart(\''+p.key+'\')">'+
+      '<span class="p-ic">'+p.icon+'</span>'+
+      '<div class="p-info"><div class="p-name">'+p.key+'</div><div class="p-desc">'+p.desc+' · 共'+list.length+'题</div></div>'+
+      '<span class="p-arrow">›</span></div>';
+    h2+='<div class="part-item" onclick="openPart(\''+p.key+'\')">'+
+      '<span class="p-ic">'+p.icon+'</span>'+
+      '<div class="p-info"><div class="p-name">'+p.key+'</div><div class="p-desc">'+p.desc+' · 共'+list.length+'题'+(wrong?' · 错题'+wrong:'')+'</div></div>'+
+      '<span class="p-arrow">›</span></div>';
+  });
+  $('partList').innerHTML=h1; $('partList2').innerHTML=h2;
+}
+
+/* ==================== 题目列表 ==================== */
+let curPart='';
+function openPart(key){curPart=key;go('quests');renderQuestList();}
+function renderQuestList(){
+  const list=QUESTIONS.filter(q=>q.type===curPart);
+  $('qListTitle').textContent=curPart+' · '+list.length+'题';
+  $('qListPno').textContent='';
+  let h='';
+  list.forEach(q=>{
+    const st=records[q.id];
+    const mark=st==='ok'?'✓':(st==='bad'?'✗':'');
+    h+='<div class="q-item'+(st?' done':'')+'" onclick="openQ(\''+curPart+'\','+q.id+')">'+
+      '<span class="q-no">'+(q.num==='—'?q.id:q.num)+'</span>'+
+      '<span class="q-stem">'+esc(q.stem)+'</span>'+
+      '<span class="q-state">'+mark+'</span></div>';
+  });
+  $('qList').innerHTML=h||'<div class="empty-tip">该题型暂无题目</div>';
+}
+
+/* ==================== 答题视图 ==================== */
+let ansIdx=0, ansList=[];
+function openQ(part,id){
+  curPart=part;
+  ansList=QUESTIONS.filter(q=>q.type===part);
+  ansIdx=ansList.findIndex(q=>q.id===id); if(ansIdx<0)ansIdx=0;
+  go('answer'); renderAnswer();
+}
+function renderAnswer(){
+  const q=ansList[ansIdx];
+  $('aPart').textContent=curPart;
+  $('aPno').textContent='第 '+(ansIdx+1)+' / '+ansList.length+' 题';
+  const wrap=$('answerWrap');
+  const navTop='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'+
+    '<button class="btn ghost" style="padding:7px 12px;font-size:13px;" onclick="stepQ(-1)">‹ 上一题</button>'+
+    '<button class="btn ghost" style="padding:7px 12px;font-size:13px;" onclick="stepQ(1)">下一题 ›</button></div>';
+  let h='<div class="card" style="padding:16px;">';
+  const psg=q.passage||(q.pk?PK_MAP[q.pk]:'');
+  if(psg){
+    h+='<div class="passage-box"><div class="pb-head"><span>📖 阅读材料</span><span class="pb-toggle" onclick="this.parentNode.parentNode.classList.toggle(\'collapsed\')">收起/展开</span></div><div class="pb-body" style="white-space:pre-wrap;">'+esc(psg)+'</div></div>';
+  }
+  h+='<div class="passage-box" style="background:#fdfbf3;border-color:#f0e6c8;"><div style="font-size:13px;line-height:1.9;white-space:pre-wrap;">'+esc(q.stem)+'</div></div>';
+  if(q.type==='翻译'||q.type==='写作'){
+    h+='<button class="btn primary" style="width:100%;margin-top:6px;" onclick="showRef(this)">查看参考答案</button>'+
+       '<div class="analysis-box" style="white-space:pre-wrap;"><div class="a-ans">参考答案</div>'+esc(q.ref||'')+'</div>'+
+       '<div style="display:flex;gap:10px;margin-top:12px;">'+
+       '<button class="btn" style="flex:1;background:var(--accent);color:#fff;" onclick="markQ(\''+q.id+'\',\'ok\')">✓ 已掌握</button>'+
+       '<button class="btn" style="flex:1;background:var(--danger);color:#fff;" onclick="markQ(\''+q.id+'\',\'bad\')">📌 标记生疏</button></div>';
+  }else{
+    h+='<ul class="opt-list">';
+    q.options.forEach((o,i)=>{
+      const letter=String.fromCharCode(65+i);
+      h+='<li class="opt-item" data-i="'+i+'" data-id="'+q.id+'" onclick="pick(this)">'+
+        '<span class="letter">'+letter+'.</span><span>'+esc(o)+'</span></li>';
+    });
+    h+='</ul>';
+    h+='<div class="analysis-box" id="anb_'+q.id+'">'+
+       '<div class="a-ans">正确答案：'+q.answer+'</div>'+
+       '<div class="a-item">'+esc(q.analysis||'')+'</div></div>';
+  }
+  h+='</div>';
+  wrap.innerHTML=navTop+h;
+}
+function stepQ(d){
+  ansIdx+=d;
+  if(ansIdx<0)ansIdx=0;
+  if(ansIdx>=ansList.length)ansIdx=ansList.length-1;
+  renderAnswer();
+}
+function pick(el){
+  if(el.classList.contains('disabled'))return;
+  const q=QUESTIONS.find(x=>x.id===Number(el.dataset.id));
+  if(!q)return;
+  const chose=el.dataset.i;
+  const correctIdx=q.answer.charCodeAt(0)-65;
+  const opts=el.parentNode.querySelectorAll('.opt-item');
+  opts.forEach(o=>o.classList.add('disabled'));
+  opts[correctIdx].classList.add('correct');
+  const ok=Number(chose)===correctIdx;
+  if(!ok)el.classList.add('wrong');
+  el.parentNode.parentNode.querySelector('.analysis-box').classList.add('show');
+  if(ok){saveRec(q.id,'ok');toast('✓ 回答正确');}
+  else{saveRec(q.id,'bad');toast('✗ 回答错误，已加入错题本');}
+  renderHead();
+}
+function saveRec(id,v){
+  records[id]=v;
+  if(v==='ok'&&records[id]==='ok'){} // 答对时从错题移除（bad覆盖为ok）
+  save(LS_REC,records);
+  const t=today();const d=dayStat[t]=dayStat[t]||{a:0,ok:0};
+  d.a++; if(v==='ok')d.ok++;
+  save(LS_DAY,dayStat);
+}
+function markQ(id,v){
+  saveRec(id,v); toast(v==='ok'?'已标记掌握':'已标记生疏'); renderHead();
+  const btn=event.currentTarget;
+  const box=btn.parentNode.parentNode.querySelector('.analysis-box');
+  if(box)box.classList.add('show');
+}
+function showRef(btn){
+  btn.style.display='none';
+  const box=btn.nextElementSibling; if(box)box.classList.add('show');
+}
+
+/* ==================== 错题本 ==================== */
+function renderWrong(){
+  const ids=getWrongIds();
+  const list=QUESTIONS.filter(q=>ids.includes(String(q.id)));
+  $('wrongCount').textContent='共 '+list.length+' 题';
+  let h='';
+  list.forEach(q=>{
+    h+='<div class="wrong-item" onclick="openQ(\''+q.type+'\','+q.id+')">'+
+      '<span class="wi-main"><span class="wi-tag">'+q.type+' · 第'+q.num+'题</span>'+
+      '<div class="wi-stem">'+esc(q.stem)+'</div></span><span style="color:#ccc;font-size:18px;">›</span></div>';
+  });
+  $('wrongList').innerHTML=h||'<div class="empty-tip"><span class="big">🎉</span>太棒了，暂无错题！<br>继续保持，坚持每天练习</div>';
+}
+function retryAllWrong(){
+  const ids=getWrongIds(); if(!ids.length){toast('当前没有错题');return;}
+  const first=QUESTIONS.find(q=>ids.includes(String(q.id)));
+  if(first)openQ(first.type,first.id);
+}
+
+/* ==================== 统计页 ==================== */
+function renderStats(){
+  let ok=0,bad=0;
+  Object.values(records).forEach(v=>{if(v==='ok')ok++;else if(v==='bad')bad++;});
+  const acc=ok+bad>0?Math.round(ok/(ok+bad)*100):0;
+  const wrong=getWrongIds().length;
+  $('statGrid').innerHTML=
+    '<div class="sc"><div class="n">'+ok+'</div><div class="t">累计答对</div></div>'+
+    '<div class="sc"><div class="n">'+bad+'</div><div class="t">累计答错</div></div>'+
+    '<div class="sc"><div class="n">'+acc+'%</div><div class="t">总体正确率</div></div>'+
+    '<div class="sc"><div class="n">'+wrong+'</div><div class="t">待巩固错题</div></div>';
+  // 各题型正确率
+  let bars='';
+  PARTS.forEach(p=>{
+    const list=QUESTIONS.filter(q=>q.type===p.key);
+    let a=0,b=0;
+    list.forEach(q=>{const v=records[q.id];if(v==='ok')a++;else if(v==='bad')b++;});
+    const total=a+b; const pct=total?Math.round(a/total*100):0;
+    bars+='<div class="bar-row"><span class="bl">'+p.key+'</span>'+
+      '<div class="btrack"><div class="bfill" style="width:'+pct+'%"></div></div>'+
+      '<span class="bn">'+pct+'%</span></div>';
+  });
+  $('statBars').innerHTML=bars;
+  // 7天
+  const days=[]; const now=new Date();
+  for(let i=6;i>=0;i--){
+    const d=new Date(now); d.setDate(d.getDate()-i);
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    days.push({key,label:(d.getMonth()+1)+'/'+d.getDate(),v:(dayStat[key]||{}).a||0});
+  }
+  const max=Math.max(1,...days.map(x=>x.v));
+  let chart='';
+  days.forEach(x=>{
+    const hh=Math.round(x.v/max*70);
+    chart+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;">'+
+      '<div style="height:'+(hh||2)+'px;width:60%;background:linear-gradient(180deg,#6c5ce7,#a29bfe);border-radius:4px 4px 1px 1px;opacity:'+(x.v?1:.3)+';"></div>'+
+      '<span style="font-size:10px;color:var(--sub);">'+x.label+'</span></div>';
+  });
+  $('weekChart').innerHTML='<div style="display:flex;align-items:flex-end;gap:6px;height:90px;">'+chart+'</div>';
+}
+function clearAll(){
+  if(confirm('确定清空全部学习记录？此操作不可恢复。')){
+    records={};dayStat={};
+    save(LS_REC,records);save(LS_DAY,dayStat);
+    renderHead();toast('已清空学习记录');
+  }
+}
+
+/* ==================== 朗读 ==================== */
+function speakText(t){
+  if(!('speechSynthesis' in window)){toast('浏览器不支持朗读');return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='en-US'; u.rate=.9;
+  speechSynthesis.speak(u);
+}
+
+/* ==================== 初始化 ==================== */
+document.querySelectorAll('.bottom-nav .tab').forEach(t=>{
+  t.addEventListener('click',()=>go(t.dataset.page));
+});
+renderHome();
+</script>
+</body>
+</html>
