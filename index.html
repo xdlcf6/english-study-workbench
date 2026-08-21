@@ -151,6 +151,15 @@ body{
 table.mini{width:100%;border-collapse:collapse;font-size:12.5px;}
 table.mini th,table.mini td{border:1px solid var(--border);padding:7px 8px;text-align:center;}
 table.mini th{background:var(--primary-light);color:var(--primary);font-weight:600;}
+/* 账号与云同步 */
+.auth-area{position:absolute;top:12px;right:14px;display:flex;align-items:center;gap:8px;z-index:5;}
+.auth-area .login-btn{border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;}
+.auth-area .login-btn:active{transform:scale(.95);}
+.auth-area .user-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border-radius:20px;padding:3px 8px 3px 3px;font-size:12px;color:#fff;max-width:130px;}
+.auth-area .user-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.auth-area .avatar{width:22px;height:22px;border-radius:50%;object-fit:cover;background:#fff;flex-shrink:0;}
+.auth-area .logout-btn{border:none;background:transparent;color:rgba(255,255,255,.9);font-size:11px;cursor:pointer;padding:3px;}
+.sync-badge{position:absolute;top:42px;right:14px;font-size:10px;color:#fff;background:rgba(0,0,0,.22);padding:2px 9px;border-radius:10px;z-index:5;}
 </style>
 </head>
 <body>
@@ -158,6 +167,10 @@ table.mini th{background:var(--primary-light);color:var(--primary);font-weight:6
 <header class="app-header">
   <div class="title">📘 同等学力申硕英语</div>
   <div class="sub">学习工作台 · 2026真题题库</div>
+  <div class="auth-area" id="authArea">
+    <button class="login-btn" onclick="startLogin()">用 GitHub 登录</button>
+  </div>
+  <div class="sync-badge" id="syncBadge" style="display:none;"></div>
   <div class="head-stats">
     <span>答对 <b id="hOk">0</b></span>
     <span>答错 <b id="hBad">0</b></span>
@@ -510,6 +523,7 @@ function saveRec(id,v){
   const t=today();const d=dayStat[t]=dayStat[t]||{a:0,ok:0};
   d.a++; if(v==='ok')d.ok++;
   save(LS_DAY,dayStat);
+  scheduleSync();
 }
 function markQ(id,v){
   saveRec(id,v); toast(v==='ok'?'已标记掌握':'已标记生疏'); renderHead();
@@ -585,7 +599,153 @@ function clearAll(){
   if(confirm('确定清空全部学习记录？此操作不可恢复。')){
     records={};dayStat={};
     save(LS_REC,records);save(LS_DAY,dayStat);
-    renderHead();toast('已清空学习记录');
+    renderHead();toast('已清空学习记录');scheduleSync();
+  }
+}
+
+/* ==================== GitHub 登录与云同步 ==================== */
+const GH_CLIENT_ID='Ov23liAAZy0bA0APhEY6';
+const GH_CLIENT_SECRET='d797ad0b5d8bc26d09ddde4c29cf809fcbdaee69';
+const GH_SCOPE='gist';
+const LS_TOKEN='ew_gh_token_v1', LS_USER='ew_gh_user_v1', LS_GIST='ew_gh_gist_v1';
+
+function ghRedirectUri(){return location.origin+location.pathname;}
+function startLogin(){
+  const r=encodeURIComponent(ghRedirectUri());
+  location.href='https://github.com/login/oauth/authorize?client_id='+GH_CLIENT_ID+
+    '&scope='+GH_SCOPE+'&redirect_uri='+r;
+}
+function doLogout(){
+  localStorage.removeItem(LS_TOKEN);localStorage.removeItem(LS_USER);localStorage.removeItem(LS_GIST);
+  renderAuth();toast('已退出登录，学习记录保留在本机');
+}
+async function ghExchange(code){
+  const resp=await fetch('https://github.com/login/oauth/access_token',{
+    method:'POST',
+    headers:{'Accept':'application/json','Content-Type':'application/json'},
+    body:JSON.stringify({client_id:GH_CLIENT_ID,client_secret:GH_CLIENT_SECRET,code:code})
+  });
+  const j=await resp.json();
+  if(j.error)throw new Error(j.error_description||j.error);
+  return j.access_token;
+}
+async function ghApi(token,path,opt){
+  opt=opt||{};
+  const resp=await fetch('https://api.github.com'+path,{
+    method:opt.method||'GET',
+    headers:Object.assign({'Authorization':'Bearer '+token,'Accept':'application/json'},
+      opt.body?{'Content-Type':'application/json'}:{}),
+    body:opt.body?JSON.stringify(opt.body):undefined
+  });
+  if(!resp.ok){const e=await resp.json().catch(()=>null);throw new Error((e&&e.message)||('HTTP '+resp.status));}
+  return resp.status===204?null:resp.json();
+}
+async function getOrCreateGist(token){
+  let gid=localStorage.getItem(LS_GIST);
+  if(gid){
+    try{const g=await ghApi(token,'/gists/'+gid);if(g&&g.id)return gid;}catch(e){gid=null;}
+  }
+  const g=await ghApi(token,'/gists',{method:'POST',body:{
+    description:'英语学习工作台 · 学习进度同步',public:false,
+    files:{'progress.json':{content:JSON.stringify({v:1,records:{},dayStat:{},savedAt:null})}}
+  }});
+  localStorage.setItem(LS_GIST,g.id);
+  return g.id;
+}
+function cloudPayload(){return {v:1,records:records,dayStat:dayStat,savedAt:new Date().toISOString()};}
+async function saveCloud(token){
+  const gid=await getOrCreateGist(token);
+  await ghApi(token,'/gists/'+gid,{method:'PATCH',body:{files:{'progress.json':{content:JSON.stringify(cloudPayload())}}}});
+}
+async function loadCloud(token){
+  const gid=await getOrCreateGist(token);
+  const g=await ghApi(token,'/gists/'+gid);
+  const f=g&&g.files&&g.files['progress.json'];
+  if(f&&f.content){try{return JSON.parse(f.content);}catch(e){}}
+  return null;
+}
+function mergeCloud(cloud){
+  if(!cloud)return false;
+  const cr=cloud.records||{}, cs=cloud.dayStat||{};
+  let changed=false;
+  Object.keys(cr).forEach(id=>{if(records[id]==null){records[id]=cr[id];changed=true;}});
+  Object.keys(cs).forEach(k=>{
+    if(!dayStat[k]){dayStat[k]=cs[k];changed=true;}
+    else{const b=cs[k]||{a:0,ok:0};const a=dayStat[k]||{a:0,ok:0};
+      if(b.a>a.a||b.ok>a.ok){dayStat[k]={a:Math.max(a.a,b.a),ok:Math.max(a.ok,b.ok)};changed=true;}}
+  });
+  return changed;
+}
+let syncTimer=null, syncing=false;
+function scheduleSync(){
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(doSync,600);
+}
+async function doSync(){
+  const token=localStorage.getItem(LS_TOKEN);
+  if(!token||syncing)return;
+  syncing=true;
+  const badge=$('syncBadge'); if(badge){badge.style.display='block';badge.textContent='同步中...';}
+  try{await saveCloud(token);if(badge)badge.textContent='✓ 已同步';}
+  catch(e){if(badge){badge.textContent='⚠ 同步失败';}}
+  finally{
+    syncing=false;
+    setTimeout(()=>{if(badge)badge.style.display='none';},1600);
+  }
+}
+async function completeLogin(token){
+  localStorage.setItem(LS_TOKEN,token);
+  const u=await ghApi(token,'/user');
+  localStorage.setItem(LS_USER,JSON.stringify(u));
+  renderAuth();
+  try{
+    const cloud=await loadCloud(token);
+    const changed=mergeCloud(cloud);
+    save(LS_REC,records);save(LS_DAY,dayStat);
+    await saveCloud(token);
+    renderHead();toast('登录成功，云端数据已同步');
+  }catch(e){toast('登录成功，但云端同步失败：'+e.message);}
+}
+function renderAuth(){
+  const area=$('authArea'); if(!area)return;
+  const token=localStorage.getItem(LS_TOKEN);
+  const badge=$('syncBadge');
+  if(token){
+    let u=null; try{u=JSON.parse(localStorage.getItem(LS_USER)||'null');}catch(e){}
+    const name=(u&&u.login)?u.login:'已登录';
+    const ava=(u&&u.avatar_url)?'<img class="avatar" src="'+esc(u.avatar_url)+'" alt="">':'';
+    area.innerHTML='<span class="user-badge">'+ava+'<span>'+esc(name)+'</span></span>'+
+      '<button class="logout-btn" onclick="doLogout()">退出</button>';
+    if(badge){badge.style.display='block';badge.textContent='☁ 云端已开启';}
+  }else{
+    area.innerHTML='<button class="login-btn" onclick="startLogin()">用 GitHub 登录</button>';
+    if(badge)badge.style.display='none';
+  }
+}
+function initAuth(){
+  const q=new URLSearchParams(location.search);
+  const code=q.get('code');
+  const badge=$('syncBadge');
+  if(code){
+    history.replaceState(null,'',ghRedirectUri());
+    if(badge){badge.style.display='block';badge.textContent='登录中...';}
+    ghExchange(code).then(token=>completeLogin(token)).catch(e=>{toast('登录失败：'+e.message);renderAuth();});
+    return;
+  }
+  const token=localStorage.getItem(LS_TOKEN);
+  if(token){
+    renderAuth();
+    (async()=>{
+      try{
+        const cloud=await loadCloud(token);
+        const changed=mergeCloud(cloud);
+        if(changed){save(LS_REC,records);save(LS_DAY,dayStat);renderHead();}
+        await saveCloud(token);
+      }catch(e){}
+      if(badge)badge.style.display='none';
+    })();
+  }else{
+    renderAuth();
   }
 }
 
@@ -603,6 +763,7 @@ document.querySelectorAll('.bottom-nav .tab').forEach(t=>{
   t.addEventListener('click',()=>go(t.dataset.page));
 });
 renderHome();
+initAuth();
 </script>
 </body>
 </html>
